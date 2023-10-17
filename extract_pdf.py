@@ -59,3 +59,27 @@ if response.status_code == 200:
         print(pdf_link)
 else:
     print(f"Failed to retrieve content from {url}")
+
+
+
+# add the pdf to azure bloob
+
+import requests
+from azure.storage.blob import BlobServiceClient
+
+# Remplacez ces valeurs par les vôtres
+container_name = ""
+
+blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
+
+for pdf_url in pdf_urls:
+    response = requests.get(pdf_url)
+    if response.status_code == 200:
+        blob_name = pdf_url.split("/")[-1]  # Utilisez le nom du fichier dans l'URL comme nom de blob
+        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        
+        with open("local_file.pdf", "wb") as pdf_file:
+            pdf_file.write(response.content)
+
+        with open("local_file.pdf", "rb") as pdf_file:
+            blob_client.upload_blob(pdf_file)
