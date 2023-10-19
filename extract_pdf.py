@@ -1,11 +1,19 @@
-## extract all the PDF that are already in the azure bloob containers
+## configuration of the file 
 
 from azure.storage.blob import BlobServiceClient
 
+account_name = "github actions"
+account_key = "github actions"
 
-azure_connection_string = "a récupérer via une github actions"
+azure_connection_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key}"
+container_name = "github actions"
+blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
 
-container_name = "a récupérer via une github actions"
+
+
+## extract all the PDF that are already in the azure bloob containers
+
+from azure.storage.blob import BlobServiceClient
 
 
 blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
@@ -67,13 +75,9 @@ else:
 import requests
 from azure.storage.blob import BlobServiceClient
 
-# Remplacez ces valeurs par les vôtres
-container_name = ""
 
-blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
-
-for pdf_url in pdf_urls:
-    response = requests.get(pdf_url)
+for pdf_link in pdf_links:
+    response = requests.get(pdf_link)
     if response.status_code == 200:
         blob_name = pdf_url.split("/")[-1]  # Utilisez le nom du fichier dans l'URL comme nom de blob
         blob_client = blob_service_client.get_blob_client(container_name, blob_name)
