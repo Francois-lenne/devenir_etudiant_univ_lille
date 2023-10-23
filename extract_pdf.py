@@ -69,6 +69,19 @@ else:
     print(f"Failed to retrieve content from {url}")
 
 
+## add in the json file the pdf that need to be treat by the program
+
+import os
+import json
+
+json_file_path = os.getcwd() + "/pdf_to_process.json"
+
+if len(pdf_links) == 0:
+    print("pas de fichier à charger")
+else:
+    with open(json_file_path, 'w') as json_file:
+        json.dump(pdf_links, json_file)
+
 
 # add the pdf to azure bloob
 
