@@ -4,4 +4,4 @@ beautifulsoup4==4.12.2
 subprocess.run==0.0.8
 PyPDF2==3.0.1
 tabula-py==2.8.2
-
+pdfplumber==0.10.2
