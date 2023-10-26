@@ -1,439 +1,210 @@
-## liste des pages avec la mention et le parcours du master
+## package a importer
 import re
 import PyPDF2
+import pdfplumber
+import pandas as pd
 
 # Chemin vers le fichier PDF
 pdf_file = 'local_file.pdf'
 
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
+# fonction pour extraire les stat globales 
 
-# Liste pour stocker les numéros de page
-pages_avec_phrase = []
+def stat_global(pdf_file):
 
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
+
+    # mise en place du dico global 
+
+    dic_stat = {} 
+
+
+    # mise en place des clefs valeurs 
+
+
+    dic_stat['num_pages'] = []
+
+    dic_stat['mention'] = []
+
+    dic_stat['parcours'] = []
+
+    dic_stat['concern_enquete'] = []
+
+    dic_stat['nb_en_emploi'] = []
+
+    dic_stat['nb_en_recherche'] = []
+
+    dic_stat['nb_autre_situations'] = []
+
+    dic_stat['nb_en_etude'] = []
+
+    dic_stat['taux_reponses'] = []
+
+
+
+
+    # Phrase à rechercher pour recherche les éléments du texte
+    phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
+
+    # set up la liste pour ajouter le texte 
+
+    texte = []
+
+
+    # mise en place des regex
+
+
+    regex_pattern_mention = r'Mention.+\n'
+
+
+
+    regex_pattern_parcours = r'Parcours.+\n'
+
+
+    regex_pattern_nb_diplomes = r"concerné-e-s par l'enqu.+\n"
+
+
+    regex_pattern_nb_emploi = r"En emploi.+\n"
+
+
+    regex_pattern_nb_rech_emploi = r"En recherche d'emploi .+\n"
+
+
+    regex_pattern_nb_aut_situ = r"Autre situation .+\n"
+
+
+    regex_pattern_nb_etude = r"En études .+\n"
+
+
+
+    regex_pattern_tx_reponse = r"Taux de réponse : .+\n"
+
+
+
+
+
+    # mise en place de la boucle for pour remplir le dico
+
+
+    # Ouverture du fichier pdf
+    with open(pdf_file, 'rb') as pdf:
+        pdf_reader = PyPDF2.PdfReader(pdf)
         
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            pages_avec_phrase.append(page_num + 1)  # Ajouter 1 car les numéros de page commencent à 1
-
-# Afficher la liste des numéros de page contenant la phrase
-print("Les pages contenant la phrase sont :", pages_avec_phrase)
-
-
-## Récupérer les mentions 
-
-
-import PyPDF2
-
-# Chemin vers le fichier PDF
-
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
-
-# Liste pour stocker les noms de mention
-noms_mentions = []
-
-# regex 
-
-regex_pattern_mention = r'Mention.+\n'
-
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            # Trouver l'indice de la phrase
-            start_index = page_text.index(phrase_a_rechercher)
+        # Parcourir chaque page du PDF
+        for page_num in range(len(pdf_reader.pages)):
+            page = pdf_reader.pages[page_num]
             
-            # Extraire le texte après la phrase (en supprimant les caractères indésirables)
-            text = page_text[start_index + len(phrase_a_rechercher):].strip()
-            # Apply the regex pattern to extract the "Mention" line
-            mention_match = re.search(regex_pattern_mention, text)
-
-            extracted_text_mention = mention_match.group(0)
-            extracted_substring_mention = extracted_text_mention.replace("Mention ", "").replace("\n", "").strip()
+            # Extraire le texte de la page
+            page_text = page.extract_text()
             
-            # Ajouter le nom de mention à la liste
-            noms_mentions.append(extracted_substring_mention)
+            # Vérifier si la phrase recherchée est présente sur la page
+            if phrase_a_rechercher in page_text:
+                dic_stat['num_pages'].append(page_num + 1)  # Ajouter 1 car les numéros de page commencent à 1
 
-# Afficher la liste des noms de mention
-print("Les noms de mention sont :", noms_mentions)
+                start_index = page_text.index(phrase_a_rechercher) # récupération de l'indice
 
+                text = page_text[start_index + len(phrase_a_rechercher):].strip() # extraire le texte avec les infos
 
-## Récupérer les parcours 
+                ## extraction de la mention
 
-import PyPDF2
+                mention_match = re.search(regex_pattern_mention, text)
 
-# Chemin vers le fichier PDF
+                extracted_text_mention = mention_match.group(0)
 
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
+                extracted_substring_mention = extracted_text_mention.replace("Mention ", "").replace("\n", "").strip()
 
-# Liste pour stocker les noms de mention
-noms_parcours = []
-texte = []
-# regex 
+                dic_stat['mention'].append(extracted_substring_mention)
 
-regex_pattern_parcours = r'Parcours.+\n'
+                ## extractions du parcours
 
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            # Trouver l'indice de la phrase
-            start_index = page_text.index(phrase_a_rechercher)
+                parcours_match = re.search(regex_pattern_parcours, text)
+
+                extracted_text_parcours = parcours_match.group(0)
+
+                extracted_substring_parcours = extracted_text_parcours.replace("Parcours ", "").replace("\n", "").strip()
+
+                dic_stat['parcours'].append(extracted_substring_parcours)
+
+                
+                ## extraction du nombre de concernés par l'enquete 
+
+                nbdiplo_match = re.search(regex_pattern_nb_diplomes, text)
+
+                extracted_nbdiplo = nbdiplo_match.group(0)
+
+                extracted_substring_nbdiplo = extracted_nbdiplo.replace("concerné-e-s par l'enquête : ", "").replace("\n", "").strip()
+
+                parts = extracted_substring_nbdiplo.split(" (hors") # modifié pour éviter que le commentaires sur les étangers soit ajoutés
+
+                extracted_substring_nbdiplo = parts[0]
+
+                dic_stat['concern_enquete'].append(extracted_substring_nbdiplo)
+
             
-            # Extraire le texte après la phrase (en supprimant les caractères indésirables)
-            text = page_text[start_index + len(phrase_a_rechercher):].strip()
-            texte.append(text)
-            # Apply the regex pattern to extract the "Mention" line
-            parcours_match = re.search(regex_pattern_parcours, text)
+            ## extraction du nombre d'étudiant en emploi
 
-            extracted_text_parcours = parcours_match.group(0)
-            extracted_substring_parcours = extracted_text_parcours.replace("Parcours ", "").replace("\n", "").strip()
+
+                nb_emploi_match = re.search(regex_pattern_nb_emploi, text)
+                if nb_emploi_match:
+                    extracted_nb_emploi = nb_emploi_match.group(0)
+                    extracted_substring_nb_emploi = extracted_nb_emploi.replace("En emploi ", "").replace("\n", "").strip()
+                else:
+                    extracted_substring_nb_emploi = "0"
+                
+                # Ajouter le nom de mention à la liste
+                dic_stat['nb_en_emploi'].append(extracted_substring_nb_emploi)
+
             
-            # Ajouter le nom de mention à la liste
-            noms_parcours.append(extracted_substring_parcours)
+            ## extraction du nombre d'étudiant en recherche d'emploi
 
-# Afficher la liste des noms de mention
-print("Les noms des parcours sont :", noms_parcours)
+                nb_rech_emploi_match = re.search(regex_pattern_nb_rech_emploi, text)
+                if nb_rech_emploi_match:
+                    extracted_nb_rech_emploi = nb_rech_emploi_match.group(0)
+                    extracted_substring_nb_rech_emploi = extracted_nb_rech_emploi.replace("En recherche d'emploi ", "").replace("\n", "").strip()
+                else:
+                    extracted_substring_nb_rech_emploi = "0"
+                
+                # Ajouter le nom de mention à la liste
+                dic_stat['nb_en_recherche'].append(extracted_substring_nb_rech_emploi)
 
-## Nombre de diplomés
-
-import PyPDF2
-
-# Chemin vers le fichier PDF
-
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
-
-# Liste pour stocker les noms de mention
-nb_diplome = []
-texte = []
-# regex 
-
-regex_pattern_nb_diplomes = r"concerné-e-s par l'enqu.+\n"
-
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            # Trouver l'indice de la phrase
-            start_index = page_text.index(phrase_a_rechercher)
             
-            # Extraire le texte après la phrase (en supprimant les caractères indésirables)
-            text = page_text[start_index + len(phrase_a_rechercher):].strip()
-            texte.append(text)
-            # Apply the regex pattern to extract the "Mention" line
-            nbdiplo_match = re.search(regex_pattern_nb_diplomes, text)
+            ## Nombre d'étudiant dans une autre situation
+                nb_aut_situ_match = re.search(regex_pattern_nb_aut_situ, text)
+                if nb_aut_situ_match:
+                    extracted_nb_aut_situ = nb_aut_situ_match.group(0)
+                    extracted_substring_nb_aut_situ = extracted_nb_aut_situ.replace("Autre situation ", "").replace("\n", "").strip()
+                else:
+                    extracted_substring_nb_aut_situ = "0"
+                
+                # Ajouter le nom de mention à la liste
+                dic_stat['nb_autre_situations'].append(extracted_substring_nb_aut_situ)
 
-            extracted_nbdiplo = nbdiplo_match.group(0)
-            extracted_substring_nbdiplo = extracted_nbdiplo.replace("concerné-e-s par l'enquête : ", "").replace("\n", "").strip()
-            parts = extracted_substring_nbdiplo.split(" (hors") # modifié pour éviter que le commentaires sur les étangers soit ajoutés
-            extracted_substring_nbdiplo = parts[0]
+            ## Nombre d'étudiant en étude
+                nb_etude_match = re.search(regex_pattern_nb_etude, text)
+                if nb_etude_match:
+                    extracted_nb_etude = nb_etude_match.group(0)
+                    extracted_substring_nb_etude = extracted_nb_etude.replace("En études ", "").replace("\n", "").strip()
+                else:
+                    extracted_substring_nb_etude = "0"
+                
+                # Ajouter le nom de mention à la liste
+                dic_stat['nb_en_etude'].append(extracted_substring_nb_etude)
             
-            # Ajouter le nom de mention à la liste
-            nb_diplome.append(extracted_substring_nbdiplo)
 
-# Afficher la liste des noms de mention
-print("Les noms des parcours sont :", nb_diplome)
+            ## Taux de réponse
 
 
-# nombre d'étudiant en emploi 
+                tx_reponse_match = re.search(regex_pattern_tx_reponse, text)
+                if tx_reponse_match:
+                    extracted_tx_reponse = tx_reponse_match.group(0)
+                    extracted_substring_tx_reponse = extracted_tx_reponse.replace("Taux de réponse : ", "").replace("%\n", "").strip()
+                else:
+                    extracted_substring_tx_reponse = "0"
 
+                dic_stat['taux_reponses'].append(extracted_substring_tx_reponse)
 
-import PyPDF2
+    # Convertir le dictionnaire en DataFrame
+    df_stat_global = pd.DataFrame(dic_stat)
 
-# Chemin vers le fichier PDF
-
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
-
-# Liste pour stocker les noms de mention
-nb_emploi = []
-texte = []
-# regex 
-
-regex_pattern_nb_emploi = r"En emploi.+\n"
-
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            # Trouver l'indice de la phrase
-            start_index = page_text.index(phrase_a_rechercher)
-            
-            # Extraire le texte après la phrase (en supprimant les caractères indésirables)
-            text = page_text[start_index + len(phrase_a_rechercher):].strip()
-            texte.append(text)
-            # Apply the regex pattern to extract the "Mention" line
-            nb_emploi_match = re.search(regex_pattern_nb_emploi, text)
-            if nb_emploi_match:
-                extracted_nb_emploi = nb_emploi_match.group(0)
-                extracted_substring_nb_emploi = extracted_nb_emploi.replace("En emploi ", "").replace("\n", "").strip()
-            else:
-                extracted_substring_nb_emploi = "0"
-            
-            # Ajouter le nom de mention à la liste
-            nb_emploi.append(extracted_substring_nb_emploi)
-
-# Afficher la liste des noms de mention
-print("Les noms des parcours sont :", nb_emploi)
-
-
-
-
-
-
-# Nombre d'étudiant au chômage 
-
-
-import PyPDF2
-
-# Chemin vers le fichier PDF
-
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
-
-# Liste pour stocker les noms de mention
-nb_rech_emploi = []
-texte = []
-# regex 
-
-regex_pattern_nb_rech_emploi = r"En recherche d'emploi .+\n"
-
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            # Trouver l'indice de la phrase
-            start_index = page_text.index(phrase_a_rechercher)
-            
-            # Extraire le texte après la phrase (en supprimant les caractères indésirables)
-            text = page_text[start_index + len(phrase_a_rechercher):].strip()
-            texte.append(text)
-            # Apply the regex pattern to extract the "Mention" line
-            nb_rech_emploi_match = re.search(regex_pattern_nb_rech_emploi, text)
-            if nb_rech_emploi_match:
-                extracted_nb_rech_emploi = nb_rech_emploi_match.group(0)
-                extracted_substring_nb_rech_emploi = extracted_nb_rech_emploi.replace("En recherche d'emploi ", "").replace("\n", "").strip()
-            else:
-                extracted_substring_nb_rech_emploi = "0"
-            
-            # Ajouter le nom de mention à la liste
-            nb_rech_emploi.append(extracted_substring_nb_rech_emploi)
-
-# Afficher la liste des noms de mention
-print("Les noms des parcours sont :", nb_rech_emploi)
-
-
-# Nombre d'étudiants dans une autre situations
-
-import PyPDF2
-
-# Chemin vers le fichier PDF
-
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
-
-# Liste pour stocker les noms de mention
-nb_aut_situ = []
-texte = []
-# regex 
-
-regex_pattern_nb_aut_situ = r"Autre situation .+\n"
-
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            # Trouver l'indice de la phrase
-            start_index = page_text.index(phrase_a_rechercher)
-            
-            # Extraire le texte après la phrase (en supprimant les caractères indésirables)
-            text = page_text[start_index + len(phrase_a_rechercher):].strip()
-            texte.append(text)
-            # Apply the regex pattern to extract the "Mention" line
-            nb_aut_situ_match = re.search(regex_pattern_nb_aut_situ, text)
-            if nb_aut_situ_match:
-                extracted_nb_aut_situ = nb_aut_situ_match.group(0)
-                extracted_substring_nb_aut_situ = extracted_nb_aut_situ.replace("Autre situation ", "").replace("\n", "").strip()
-            else:
-                extracted_substring_nb_aut_situ = "0"
-            
-            # Ajouter le nom de mention à la liste
-            nb_aut_situ.append(extracted_substring_nb_aut_situ)
-
-# Afficher la liste des noms de mention
-print("Les noms des parcours sont :", nb_aut_situ)
-
-
-
-# Nombre d'étudiant en études 
-
-
-import PyPDF2
-
-# Chemin vers le fichier PDF
-
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
-
-# Liste pour stocker les noms de mention
-nb_etude = []
-texte = []
-# regex 
-
-regex_pattern_nb_etude = r"En études .+\n"
-
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            # Trouver l'indice de la phrase
-            start_index = page_text.index(phrase_a_rechercher)
-            
-            # Extraire le texte après la phrase (en supprimant les caractères indésirables)
-            text = page_text[start_index + len(phrase_a_rechercher):].strip()
-            texte.append(text)
-            # Apply the regex pattern to extract the "Mention" line
-            nb_etude_match = re.search(regex_pattern_nb_etude, text)
-            if nb_etude_match:
-                extracted_nb_etude = nb_etude_match.group(0)
-                extracted_substring_nb_etude = extracted_nb_etude.replace("En études ", "").replace("\n", "").strip()
-            else:
-                extracted_substring_nb_etude = "0"
-            
-            # Ajouter le nom de mention à la liste
-            nb_etude.append(extracted_substring_nb_etude)
-
-# Afficher la liste des noms de mention
-print("Les noms des parcours sont :", nb_etude)
-
-
-# Taux de réponse aux questionnaires 
-
-
-import PyPDF2
-
-# Chemin vers le fichier PDF
-
-# Phrase à rechercher
-phrase_a_rechercher = "RÉPERTOIRE DES EMPLOIS DES DIPLÔMÉS DE MASTER"
-
-# Liste pour stocker les noms de mention
-tx_reponse = []
-texte = []
-# regex 
-
-regex_pattern_tx_reponse = r"Taux de réponse : .+\n"
-
-# Ouvrir le fichier PDF en mode lecture binaire
-with open(pdf_file, 'rb') as pdf:
-    pdf_reader = PyPDF2.PdfReader(pdf)
-    
-    # Parcourir chaque page du PDF
-    for page_num in range(len(pdf_reader.pages)):
-        page = pdf_reader.pages[page_num]
-        
-        # Extraire le texte de la page
-        page_text = page.extract_text()
-        
-        # Vérifier si la phrase recherchée est présente sur la page
-        if phrase_a_rechercher in page_text:
-            # Trouver l'indice de la phrase
-            start_index = page_text.index(phrase_a_rechercher)
-            
-            # Extraire le texte après la phrase (en supprimant les caractères indésirables)
-            text = page_text[start_index + len(phrase_a_rechercher):].strip()
-            texte.append(text)
-            # Apply the regex pattern to extract the "Mention" line
-            tx_reponse_match = re.search(regex_pattern_tx_reponse, text)
-            if tx_reponse_match:
-                extracted_tx_reponse = tx_reponse_match.group(0)
-                extracted_substring_tx_reponse = extracted_tx_reponse.replace("Taux de réponse : ", "").replace("%\n", "").strip()
-            else:
-                extracted_substring_nb_etude = "0"
-            
-            # Ajouter le nom de mention à la liste
-            tx_reponse.append(extracted_substring_tx_reponse)
-
-# Afficher la liste des noms de mention
-print("Les noms des parcours sont :", tx_reponse)
-
-
+    return df_stat_global
 
 # Extraire tout les tableaux avec le numéro de page correspondant du fichier pdf 
 
