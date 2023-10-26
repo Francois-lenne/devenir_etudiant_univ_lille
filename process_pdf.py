@@ -208,31 +208,46 @@ def stat_global(pdf_file):
 
 # Extraire tout les tableaux avec le numéro de page correspondant du fichier pdf 
 
-import pdfplumber
-import pandas as pd
 
-# Ouvrir le fichier PDF
-pdf_file = 'local_file.pdf'
-tableau_final = pd.DataFrame()
 
-with pdfplumber.open(pdf_file) as pdf:
+def rep_emploi(pdf_file):
+    # Ouvrir le fichier PDF
+    rep_emploi = pd.DataFrame()
+
+    with pdfplumber.open(pdf_file) as pdf:
     # Parcourir les pages du PDF
-    for page_number, page in enumerate(pdf.pages, start=1):  # Commencer la numérotation des pages à 1
+        for page_number, page in enumerate(pdf.pages, start=1):  # Commencer la numérotation des pages à 1
         # Extraire le texte de la page
-        text = page.extract_text()
+            text = page.extract_text()
         
         # Vérifier si les colonnes "Diplômé-e" et "Intitulé d'emploi" sont présentes dans le texte
-        if "Diplômé-e" in text and "Intitulé d'emploi" in text:
+            if "Diplômé-e" in text and "Intitulé d'emploi" in text:
             # Trouver et extraire le tableau
-            table = page.extract_table()
+                table = page.extract_table()
             
             # Vérifier que le tableau contient au moins 2 colonnes
-            if len(table[0]) >= 2:
+                if len(table[0]) >= 2:
                 # Créer un DataFrame à partir du tableau
-                df = pd.DataFrame(table[1:], columns=table[0])
+                    df = pd.DataFrame(table[1:], columns=table[0])
                 
                 # Ajouter une colonne pour le numéro de page
-                df['Page'] = page_number
+                    df['Page'] = page_number
                 
                 # Ajouter le DataFrame à tableau_final
-                tableau_final = pd.concat([tableau_final, df], ignore_index=True)
+                    rep_emploi = pd.concat([rep_emploi, df], ignore_index=True)
+                    
+    # suppression des "/n" dans les colonnes 
+
+    rep_emploi.columns = rep_emploi.columns.str.replace('\n', ' ')
+
+    replacement_dict = {
+        'Diplômé-e': {'\n': ' '},
+        "Intitulé d'emploi": {'\n': ' '},
+        "Mission(s)": {'\n': ' '},
+        "Activité de l'employeur": {'\n': ' '},
+        "Revenu net en €": {'\n': ' '}
+    }
+
+    rep_emploi = rep_emploi.replace(replacement_dict, regex=True)
+
+    return rep_emploi
