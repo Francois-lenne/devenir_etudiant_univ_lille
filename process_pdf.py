@@ -251,3 +251,40 @@ def rep_emploi(pdf_file):
     rep_emploi = rep_emploi.replace(replacement_dict, regex=True)
 
     return rep_emploi
+
+
+
+# récupéré l'année et la faculté 
+
+import pdfplumber
+
+# Ouvrir le fichier PDF en mode lecture
+with pdfplumber.open('local_file.pdf') as pdf:
+    # Obtenir la première page local_file.pdf
+    first_page = pdf.pages[0]
+
+    print(first_page)
+
+    # Extraire le texte de la première page
+    text = first_page.extract_text()
+
+    print(text)
+
+    # Utiliser une expression régulière pour rechercher la première information entre "promotion" et le retour chariot
+    info1_match = re.search(r'Promotion \d{4}', text)
+    if info1_match:
+        info1 = info1_match.group(0)
+    else:
+        info1 = "Information non trouvée"
+
+    # Utiliser une expression régulière pour rechercher la deuxième information juste avant "odif"
+    info2_match = re.search(r'(\d{4})\n(.*)ODiF', text)
+    if info2_match:
+        info2 = info2_match.group(0).strip()
+    else:
+        info2 = "Information non trouvée"
+
+    # Afficher les informations extraites
+    print("Information 1:", info1)
+    print("Information 2:", info2)
+
