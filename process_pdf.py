@@ -307,3 +307,184 @@ df_stat_global["promo"] = add_faculte_promo('local_file.pdf')[0]
 
 df_stat_global["faculte"] = add_faculte_promo('local_file.pdf')[1]
 
+
+
+# add the dataframes updated to the parquet file 
+
+##retrieve the parquet file into a local pandas dataframe
+
+import pandas as pd
+from io import BytesIO
+from azure.storage.blob import ContainerClient
+
+container_name = "value-odif"
+
+
+blob_name = "stat_global.parquet"
+container = ContainerClient.from_connection_string(conn_str=azure_connection_string, container_name=container_name)
+
+print(container)
+
+blob_client = container.get_blob_client(blob=blob_name)
+
+print(blob_client)
+stream_downloader = blob_client.download_blob()
+stream = BytesIO()
+stream_downloader.readinto(stream)
+processed_df_stat = pd.read_parquet(stream, engine='pyarrow')
+
+
+processed_df_stat
+
+
+
+## delete the file parquet in order to do a .append later
+
+container_name = 'value-odif'
+blob_name = 'stat_global.parquet'
+
+# Créez une instance BlobServiceClient en utilisant votre compte et votre clé
+blob_service_client = BlobServiceClient(account_url=f"https://{account_name}.blob.core.windows.net", credential=account_key)
+
+# Obtenez une référence au conteneur
+container_client = blob_service_client.get_container_client(container_name)
+
+# Vérifiez si le blob existe avant de le supprimer
+if container_client.get_blob_client(blob_name).exists():
+    # Supprimez le blob
+    container_client.get_blob_client(blob_name).delete_blob()
+    print(f"Le blob {blob_name} a été supprimé avec succès.")
+else:
+    print(f"Le blob {blob_name} n'existe pas dans le conteneur.")
+
+# Fermez la connexion au service
+blob_service_client.close()
+
+
+
+## add all the lines the historical and the newest
+
+# Concaténer les lignes de df2 qui ne sont pas présentes dans df1
+result_glob = pd.concat([df_stat_global, processed_df_stat], ignore_index=True).drop_duplicates()
+
+
+# Afficher le résultat
+print(result_glob)
+
+
+
+
+## add the update pandas dataframe to the parquet file
+
+import pandas as pd
+from azure.storage.blob import BlobServiceClient
+from io import BytesIO
+
+container_name = "value-odif"
+
+blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
+blob_client = blob_service_client.get_blob_client(container=container_name, blob="link")
+
+blob_name = "stat_global.parquet"
+blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+
+
+parquet_file = BytesIO()
+result_glob.to_parquet(parquet_file, engine='pyarrow')
+parquet_file.seek(0)  # change the stream position back to the beginning after writing
+
+blob_client.upload_blob(
+    data=parquet_file
+)
+
+
+
+
+
+
+## pour le rep emploi
+
+### lire le blob
+
+
+import pandas as pd
+from io import BytesIO
+from azure.storage.blob import ContainerClient
+
+blob_name = "rep_emploi.parquet"
+container = ContainerClient.from_connection_string(conn_str=azure_connection_string, container_name=container_name)
+
+print(container)
+
+blob_client = container.get_blob_client(blob=blob_name)
+
+print(blob_client)
+stream_downloader = blob_client.download_blob()
+stream = BytesIO()
+stream_downloader.readinto(stream)
+processed_df_rep = pd.read_parquet(stream, engine='pyarrow')
+
+
+processed_df_rep
+
+
+#### supprimer le blob
+
+container_name = 'value-odif'
+blob_name = "rep_emploi.parquet"
+
+# Créez une instance BlobServiceClient en utilisant votre compte et votre clé
+blob_service_client = BlobServiceClient(account_url=f"https://{account_name}.blob.core.windows.net", credential=account_key)
+
+# Obtenez une référence au conteneur
+container_client = blob_service_client.get_container_client(container_name)
+
+# Vérifiez si le blob existe avant de le supprimer
+if container_client.get_blob_client(blob_name).exists():
+    # Supprimez le blob
+    container_client.get_blob_client(blob_name).delete_blob()
+    print(f"Le blob {blob_name} a été supprimé avec succès.")
+else:
+    print(f"Le blob {blob_name} n'existe pas dans le conteneur.")
+
+# Fermez la connexion au service
+blob_service_client.close()
+
+
+
+
+### ajout nouvelle ligne
+
+result_rep = pd.concat([rep_emploi, processed_df_rep], ignore_index=True).drop_duplicates()
+
+
+# Afficher le résultat
+print(result_rep)
+
+
+
+### ecriture du nouveau blob
+
+
+import pandas as pd
+from azure.storage.blob import BlobServiceClient
+from io import BytesIO
+
+container_name = "value-odif"
+
+blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
+blob_client = blob_service_client.get_blob_client(container=container_name, blob="https://csb1003200042a4adad.blob.core.windows.net/odif")
+
+blob_name = "rep_emploi.parquet"
+blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+
+
+
+parquet_file = BytesIO()
+result_rep.to_parquet(parquet_file, engine='pyarrow')
+parquet_file.seek(0)  # change the stream position back to the beginning after writing
+
+blob_client.upload_blob(
+    data=parquet_file
+)
+
