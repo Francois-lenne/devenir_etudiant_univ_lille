@@ -206,6 +206,9 @@ def stat_global(pdf_file):
 
     return df_stat_global
 
+df_stat_global = stat_global('local_file.pdf')
+
+
 # Extraire tout les tableaux avec le numéro de page correspondant du fichier pdf 
 
 
@@ -251,6 +254,25 @@ def rep_emploi(pdf_file):
     rep_emploi = rep_emploi.replace(replacement_dict, regex=True)
 
     return rep_emploi
+
+rep_emploi = rep_emploi('local_file.pdf')
+
+
+#   ajout de la mention et du parcours pour le répértoire d'emploi 
+
+def add_mention_parcours(df_stat_global,rep_emploi):
+    result = rep_emploi.merge(df_stat_global[['num_pages', 'mention', 'parcours']], on='num_pages', how='left')
+
+    result['mention'].fillna(method='ffill', inplace=True)
+
+    result['parcours'].fillna(method='ffill', inplace=True)
+
+    return result
+
+rep_emploi = add_mention_parcours(df_stat_global,rep_emploi)
+
+rep_emploi
+
 
 
 
