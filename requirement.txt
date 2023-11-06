@@ -5,6 +5,6 @@ subprocess.run==0.0.8
 PyPDF2==3.0.1
 tabula-py==2.8.2
 pdfplumber==0.10.2
-azure-synapse==0.1.1
-azureml-core==1.53.0
 pandas==2.1.2
+pyarrow==14.0.0
+fastparquet==2023.10.1
