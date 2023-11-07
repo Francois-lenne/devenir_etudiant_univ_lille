@@ -92,7 +92,7 @@ from azure.storage.blob import BlobServiceClient
 for pdf_link in pdf_links:
     response = requests.get(pdf_link)
     if response.status_code == 200:
-        blob_name = pdf_url.split("/")[-1]  # Utilisez le nom du fichier dans l'URL comme nom de blob
+        blob_name = pdf_link.split("/")[-1]  # Utilisez le nom du fichier dans l'URL comme nom de blob
         blob_client = blob_service_client.get_blob_client(container_name, blob_name)
         
         with open("local_file.pdf", "wb") as pdf_file:
