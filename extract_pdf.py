@@ -6,7 +6,7 @@ account_name = "github actions"
 account_key = "github actions"
 
 azure_connection_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key}"
-container_name = "github actions"
+container_name = "odif"
 blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
 
 
@@ -69,18 +69,27 @@ else:
     print(f"Failed to retrieve content from {url}")
 
 
-## add in the json file the pdf that need to be treat by the program
+## add in the json file stock in azure the pdf that need to be treat by the program
 
-import os
 import json
 
-json_file_path = os.getcwd() + "/pdf_to_process.json"
+# Convert the list to a JSON string
+json_pdf_name = json.dumps(pdf_links)
 
-if len(pdf_links) == 0:
-    print("pas de fichier à charger")
-else:
-    with open(json_file_path, 'w') as json_file:
-        json.dump(pdf_links, json_file)
+# Create a BlobServiceClient
+blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
+
+# Get a reference to the container
+container_client = blob_service_client.get_container_client(container_name)
+
+# Specify the name of the JSON file in the container
+json_file_name = "pdf_to_process.json"
+
+# Create or update the blob with the JSON data
+blob_client = container_client.get_blob_client(json_file_name)
+blob_client.upload_blob(json_pdf_name, overwrite=True)
+
+print(f"PDF names successfully written to {json_file_name} in Azure Blob Storage.")
 
 
 # add the pdf to azure bloob
