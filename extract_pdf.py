@@ -1,9 +1,10 @@
 ## configuration of the file 
 
 from azure.storage.blob import BlobServiceClient
+import os
 
-account_name = "github actions"
-account_key = "github actions"
+account_name = os.environ["account_name"]
+account_key = os.environ["account_key"]
 
 azure_connection_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key}"
 container_name = "odif"
@@ -12,8 +13,6 @@ blob_service_client = BlobServiceClient.from_connection_string(azure_connection_
 
 
 ## extract all the PDF that are already in the azure bloob containers
-
-from azure.storage.blob import BlobServiceClient
 
 
 blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
