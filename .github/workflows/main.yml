@@ -26,6 +26,6 @@ jobs:
 
       - name: execute py script # run extract_pdf.py
         env:
-          account_name: ${{ secrets.SOME_SECRET }}
-          account_key: ${{ secrets.SOME_SECRET }}
+          account_name: ${{ secrets.account_name }}
+          account_key: ${{ secrets.account_key }}
         run: python extract_pdf.py
