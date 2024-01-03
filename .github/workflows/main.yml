@@ -25,4 +25,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: execute py script # run the python script
-        run: python extract_pdf.py.py
+        run: python extract_pdf.py
