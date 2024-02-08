@@ -3,9 +3,12 @@ import re
 import PyPDF2
 import pdfplumber
 import pandas as pd
+import os
 
 # Chemin vers le fichier PDF
 pdf_file = 'local_file.pdf'
+
+
 
 # fonction pour extraire les stat globales 
 
@@ -209,6 +212,8 @@ def stat_global(pdf_file):
 df_stat_global = stat_global('local_file.pdf')
 
 
+
+
 # Extraire tout les tableaux avec le numéro de page correspondant du fichier pdf 
 
 
@@ -234,7 +239,7 @@ def rep_emploi(pdf_file):
                     df = pd.DataFrame(table[1:], columns=table[0])
                 
                 # Ajouter une colonne pour le numéro de page
-                    df['Page'] = page_number
+                    df['num_pages'] = page_number
                 
                 # Ajouter le DataFrame à tableau_final
                     rep_emploi = pd.concat([rep_emploi, df], ignore_index=True)
@@ -256,6 +261,8 @@ def rep_emploi(pdf_file):
     return rep_emploi
 
 rep_emploi = rep_emploi('local_file.pdf')
+
+
 
 
 #   ajout de la mention et du parcours pour le répértoire d'emploi 
@@ -308,183 +315,90 @@ df_stat_global["promo"] = add_faculte_promo('local_file.pdf')[0]
 df_stat_global["faculte"] = add_faculte_promo('local_file.pdf')[1]
 
 
+df_stat_global.to_csv('stat_global.csv', index=False)
 
-# add the dataframes updated to the parquet file 
-
-##retrieve the parquet file into a local pandas dataframe
-
-import pandas as pd
-from io import BytesIO
-from azure.storage.blob import ContainerClient
-
-container_name = "value-odif"
-
-
-blob_name = "stat_global.parquet"
-container = ContainerClient.from_connection_string(conn_str=azure_connection_string, container_name=container_name)
-
-print(container)
-
-blob_client = container.get_blob_client(blob=blob_name)
-
-print(blob_client)
-stream_downloader = blob_client.download_blob()
-stream = BytesIO()
-stream_downloader.readinto(stream)
-processed_df_stat = pd.read_parquet(stream, engine='pyarrow')
-
-
-processed_df_stat
-
-
-
-## delete the file parquet in order to do a .append later
-
-container_name = 'value-odif'
-blob_name = 'stat_global.parquet'
-
-# Créez une instance BlobServiceClient en utilisant votre compte et votre clé
-blob_service_client = BlobServiceClient(account_url=f"https://{account_name}.blob.core.windows.net", credential=account_key)
-
-# Obtenez une référence au conteneur
-container_client = blob_service_client.get_container_client(container_name)
-
-# Vérifiez si le blob existe avant de le supprimer
-if container_client.get_blob_client(blob_name).exists():
-    # Supprimez le blob
-    container_client.get_blob_client(blob_name).delete_blob()
-    print(f"Le blob {blob_name} a été supprimé avec succès.")
-else:
-    print(f"Le blob {blob_name} n'existe pas dans le conteneur.")
-
-# Fermez la connexion au service
-blob_service_client.close()
-
-
-
-## add all the lines the historical and the newest
-
-# Concaténer les lignes de df2 qui ne sont pas présentes dans df1
-result_glob = pd.concat([df_stat_global, processed_df_stat], ignore_index=True).drop_duplicates()
-
-
-# Afficher le résultat
-print(result_glob)
+rep_emploi.to_csv('rep_emploi.csv', index=False)
 
 
 
 
-## add the update pandas dataframe to the parquet file
+# récupéré les fichiers pdf à traiter
 
-import pandas as pd
+
 from azure.storage.blob import BlobServiceClient
-from io import BytesIO
+from datetime import datetime, timezone
 
-container_name = "value-odif"
+def get_files_from_container(connection_string, container_name):
+    # Create a BlobServiceClient using the connection string
+    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
 
-blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
-blob_client = blob_service_client.get_blob_client(container=container_name, blob="link")
+    # Get a reference to the container
+    container_client = blob_service_client.get_container_client(container_name)
 
-blob_name = "stat_global.parquet"
-blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+    # List all the blobs in the container
+    blobs = container_client.list_blobs()
 
+    # Get today's date
+    today = datetime.now(timezone.utc).date()
 
-parquet_file = BytesIO()
-result_glob.to_parquet(parquet_file, engine='pyarrow')
-parquet_file.seek(0)  # change the stream position back to the beginning after writing
+    # Get the names of the blobs that were added today
+    file_names = [blob.name for blob in blobs if blob.last_modified.date() == today]
 
-blob_client.upload_blob(
-    data=parquet_file
-)
+    return file_names
 
+fichier_a_traiter = get_files_from_container(azure_connection_string, container_name)
 
-
-
-
-
-## pour le rep emploi
-
-### lire le blob
-
-
-import pandas as pd
-from io import BytesIO
-from azure.storage.blob import ContainerClient
-
-blob_name = "rep_emploi.parquet"
-container = ContainerClient.from_connection_string(conn_str=azure_connection_string, container_name=container_name)
-
-print(container)
-
-blob_client = container.get_blob_client(blob=blob_name)
-
-print(blob_client)
-stream_downloader = blob_client.download_blob()
-stream = BytesIO()
-stream_downloader.readinto(stream)
-processed_df_rep = pd.read_parquet(stream, engine='pyarrow')
-
-
-processed_df_rep
-
-
-#### supprimer le blob
-
-container_name = 'value-odif'
-blob_name = "rep_emploi.parquet"
-
-# Créez une instance BlobServiceClient en utilisant votre compte et votre clé
-blob_service_client = BlobServiceClient(account_url=f"https://{account_name}.blob.core.windows.net", credential=account_key)
-
-# Obtenez une référence au conteneur
-container_client = blob_service_client.get_container_client(container_name)
-
-# Vérifiez si le blob existe avant de le supprimer
-if container_client.get_blob_client(blob_name).exists():
-    # Supprimez le blob
-    container_client.get_blob_client(blob_name).delete_blob()
-    print(f"Le blob {blob_name} a été supprimé avec succès.")
-else:
-    print(f"Le blob {blob_name} n'existe pas dans le conteneur.")
-
-# Fermez la connexion au service
-blob_service_client.close()
+print(fichier_a_traiter)
 
 
 
+# traiter les fichiers pdf récupéré 
 
-### ajout nouvelle ligne
+# Parcourez les blobs dans le conteneur
+for blob in container_client.list_blobs():
+    # Récupérez le nom du blob
+    blob_name = blob.name
 
-result_rep = pd.concat([rep_emploi, processed_df_rep], ignore_index=True).drop_duplicates()
+    if blob_name not in fichier_a_traiter:
+        print(f"Le fichier {blob_name} ne sera pas traité.")
+        continue
 
+    # Téléchargez le blob localement
+    with open(blob_name, "wb") as blob_file:
+        blob_client = container_client.get_blob_client(blob_name)
+        blob_data = blob_client.download_blob()
+        blob_data.readinto(blob_file)
 
-# Afficher le résultat
-print(result_rep)
-
-
-
-### ecriture du nouveau blob
-
-
-import pandas as pd
-from azure.storage.blob import BlobServiceClient
-from io import BytesIO
-
-container_name = "value-odif"
-
-blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
-blob_client = blob_service_client.get_blob_client(container=container_name, blob="https://csb1003200042a4adad.blob.core.windows.net/odif")
-
-blob_name = "rep_emploi.parquet"
-blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+    # Appliquez votre fonction à ce fichier PDF (exemple avec PyPDF2)
+    pdf_file = open(blob_name, "rb")
+    pdf_reader = PyPDF2.PdfReader(pdf_file)
 
 
 
-parquet_file = BytesIO()
-result_rep.to_parquet(parquet_file, engine='pyarrow')
-parquet_file.seek(0)  # change the stream position back to the beginning after writing
+    # ajouter les fonctions d'extraction des données
+    stat_global(pdf_file)
+    rep_emploi(pdf_file)
+    add_mention_parcours(df_stat_global,rep_emploi)
+    add_faculte_promo(pdf_file)
+    
 
-blob_client.upload_blob(
-    data=parquet_file
-)
+
+    print(add_faculte_promo(pdf_file)[0])
+
+    print(add_faculte_promo(pdf_file)[1])
+
+    # Votre logique de traitement ici
+
+
+
+    # Par exemple, vous pouvez extraire le texte, les métadonnées, etc.
+
+    # Fermez le fichier PDF
+    pdf_file.close()
+
+    # Vous pouvez ensuite envoyer les résultats vers un autre conteneur ou les stocker ailleurs
+    # Assurez-vous de gérer les erreurs, la gestion des exceptions, etc.
+
+    # Supprimez le fichier local si vous n'en avez plus besoin
+    os.remove(blob_name)
 
