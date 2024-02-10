@@ -4,11 +4,23 @@ import PyPDF2
 import pdfplumber
 import pandas as pd
 import os
+from azure.storage.blob import BlobServiceClient
+import os
 
 # Chemin vers le fichier PDF
 pdf_file = 'local_file.pdf'
 
 
+# Settings pour la connexion à Azure Blob Storage
+account_name = os.environ["account_name"]
+account_key = os.environ["account_key"]
+
+azure_connection_string = f"DefaultEndpointsProtocol=https;AccountName={account_name};AccountKey={account_key}"
+container_name = "odif"
+blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
+
+blob_service_client = BlobServiceClient.from_connection_string(azure_connection_string)
+container_client = blob_service_client.get_container_client(container_name)
 
 # fonction pour extraire les stat globales 
 
@@ -369,30 +381,47 @@ for blob in container_client.list_blobs():
         blob_data = blob_client.download_blob()
         blob_data.readinto(blob_file)
 
-    # Appliquez votre fonction à ce fichier PDF (exemple avec PyPDF2)
+    # Appliquez votre fonction au fichier pdf
     pdf_file = open(blob_name, "rb")
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
+    print(pdf_file)
+    print(type(pdf_file))
 
-
-
+    if 'df_stat_global' not in locals():
     # ajouter les fonctions d'extraction des données
-    stat_global(pdf_file)
-    rep_emploi(pdf_file)
-    add_mention_parcours(df_stat_global,rep_emploi)
-    add_faculte_promo(pdf_file)
+        df_stat_global = stat_global(pdf_file)
+       
+        df_rep_emploi = rep_emploi(pdf_file)
+        
+        add_mention_parcours(df_stat_global,df_rep_emploi)
+        
+        df_stat_global["promo"] = add_faculte_promo(pdf_file)[0]
+
+        df_stat_global["faculte"] = add_faculte_promo(pdf_file)[1]
+
+        df_rep_emploi["promo"] = add_faculte_promo(pdf_file)[0]
+
+        df_rep_emploi["faculte"] = add_faculte_promo(pdf_file)[1]
     
+    else:
+        df_stat_global_suite = stat_global(pdf_file)
 
+        df_rep_emploi_suite = rep_emploi(pdf_file)
 
-    print(add_faculte_promo(pdf_file)[0])
+        add_mention_parcours(df_stat_global_suite,df_rep_emploi_suite)
 
-    print(add_faculte_promo(pdf_file)[1])
+        df_stat_global_suite["promo"] = add_faculte_promo(pdf_file)[0]
 
-    # Votre logique de traitement ici
+        df_stat_global_suite["faculte"] = add_faculte_promo(pdf_file)[1]
 
+        df_rep_emploi_suite["promo"] = add_faculte_promo(pdf_file)[0]
 
+        df_rep_emploi_suite["faculte"] = add_faculte_promo(pdf_file)[1]
 
-    # Par exemple, vous pouvez extraire le texte, les métadonnées, etc.
+        df_stat_global = pd.concat([df_stat_global, df_stat_global_suite])
 
+        df_rep_emploi = pd.concat([df_rep_emploi, df_rep_emploi_suite])
+
+    
     # Fermez le fichier PDF
     pdf_file.close()
 
@@ -402,3 +431,7 @@ for blob in container_client.list_blobs():
     # Supprimez le fichier local si vous n'en avez plus besoin
     os.remove(blob_name)
 
+
+df_stat_global.to_csv('stat_global2.csv', index=False)
+
+df_rep_emploi.to_csv('rep_emploi2.csv', index=False)
