@@ -6,9 +6,13 @@ import pandas as pd
 import os
 from azure.storage.blob import BlobServiceClient
 import os
+import requests
 
-# Chemin vers le fichier PDF
-pdf_file = 'local_file.pdf'
+import warnings
+
+# Ignorer tous les avertissements
+warnings.filterwarnings('ignore')
+
 
 
 # Settings pour la connexion à Azure Blob Storage
@@ -221,7 +225,6 @@ def stat_global(pdf_file):
 
     return df_stat_global
 
-df_stat_global = stat_global('local_file.pdf')
 
 
 
@@ -272,7 +275,6 @@ def rep_emploi(pdf_file):
 
     return rep_emploi
 
-rep_emploi = rep_emploi('local_file.pdf')
 
 
 
@@ -288,9 +290,7 @@ def add_mention_parcours(df_stat_global,rep_emploi):
 
     return result
 
-rep_emploi = add_mention_parcours(df_stat_global,rep_emploi)
 
-rep_emploi
 
 
 
@@ -316,22 +316,6 @@ def add_faculte_promo(pdf_file):
 
         return promo, faculte
     
-
-rep_emploi["promo"] = add_faculte_promo('local_file.pdf')[0]
-
-rep_emploi["faculte"] = add_faculte_promo('local_file.pdf')[1]
-
-
-df_stat_global["promo"] = add_faculte_promo('local_file.pdf')[0]
-
-df_stat_global["faculte"] = add_faculte_promo('local_file.pdf')[1]
-
-
-df_stat_global.to_csv('stat_global.csv', index=False)
-
-rep_emploi.to_csv('rep_emploi.csv', index=False)
-
-
 
 
 # récupéré les fichiers pdf à traiter
@@ -366,25 +350,29 @@ print(fichier_a_traiter)
 
 # traiter les fichiers pdf récupéré 
 
+
+
 # Parcourez les blobs dans le conteneur
 for blob in container_client.list_blobs():
     # Récupérez le nom du blob
     blob_name = blob.name
+    print(blob_name)
 
     if blob_name not in fichier_a_traiter:
         print(f"Le fichier {blob_name} ne sera pas traité.")
         continue
 
-    # Téléchargez le blob localement
-    with open(blob_name, "wb") as blob_file:
-        blob_client = container_client.get_blob_client(blob_name)
-        blob_data = blob_client.download_blob()
-        blob_data.readinto(blob_file)
+    blob_client = container_client.get_blob_client(blob_name)
+    blob_url = blob_client.url
 
-    # Appliquez votre fonction au fichier pdf
-    pdf_file = open(blob_name, "rb")
-    print(pdf_file)
-    print(type(pdf_file))
+    print(f"L'URL du fichier {blob_name} est {blob_url}")
+
+    pdf_file = f"{blob_name}"
+    # Téléchargez le fichier
+    with open(pdf_file, 'wb') as download_file:
+        download_file.write(blob_client.download_blob().readall())
+
+
 
     if 'df_stat_global' not in locals():
     # ajouter les fonctions d'extraction des données
@@ -423,13 +411,13 @@ for blob in container_client.list_blobs():
 
     
     # Fermez le fichier PDF
-    pdf_file.close()
+    # pdf_file.close()
 
     # Vous pouvez ensuite envoyer les résultats vers un autre conteneur ou les stocker ailleurs
     # Assurez-vous de gérer les erreurs, la gestion des exceptions, etc.
 
     # Supprimez le fichier local si vous n'en avez plus besoin
-    os.remove(blob_name)
+    # os.remove(blob_name)
 
 
 df_stat_global.to_csv('stat_global2.csv', index=False)
