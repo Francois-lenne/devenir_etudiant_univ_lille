@@ -282,13 +282,13 @@ def rep_emploi(pdf_file):
 #   ajout de la mention et du parcours pour le répértoire d'emploi 
 
 def add_mention_parcours(df_stat_global,rep_emploi):
-    result = rep_emploi.merge(df_stat_global[['num_pages', 'mention', 'parcours']], on='num_pages', how='left')
+    rep_emploi_merge = rep_emploi.merge(df_stat_global[['num_pages', 'mention', 'parcours']], on='num_pages', how='left')
 
-    result['mention'].fillna(method='ffill', inplace=True)
+    rep_emploi_merge['mention'].fillna(method='ffill', inplace=True)
 
-    result['parcours'].fillna(method='ffill', inplace=True)
+    rep_emploi_merge['parcours'].fillna(method='ffill', inplace=True)
 
-    return result
+    return rep_emploi_merge
 
 
 
@@ -312,7 +312,7 @@ def add_faculte_promo(pdf_file):
 
         promo = info1_match.group(0).replace("Promotion ", "")
 
-        faculte = text[77:-87].replace("\n", " ")
+        faculte = text[74:-87].replace("\n", " ")
 
         return promo, faculte
     
@@ -380,34 +380,34 @@ for blob in container_client.list_blobs():
        
         df_rep_emploi = rep_emploi(pdf_file)
         
-        add_mention_parcours(df_stat_global,df_rep_emploi)
+        rep_emploi_merge = add_mention_parcours(df_stat_global,df_rep_emploi)
         
         df_stat_global["promo"] = add_faculte_promo(pdf_file)[0]
 
         df_stat_global["faculte"] = add_faculte_promo(pdf_file)[1]
 
-        df_rep_emploi["promo"] = add_faculte_promo(pdf_file)[0]
+        rep_emploi_merge["promo"] = add_faculte_promo(pdf_file)[0]
 
-        df_rep_emploi["faculte"] = add_faculte_promo(pdf_file)[1]
+        rep_emploi_merge["faculte"] = add_faculte_promo(pdf_file)[1]
     
     else:
         df_stat_global_suite = stat_global(pdf_file)
 
         df_rep_emploi_suite = rep_emploi(pdf_file)
 
-        add_mention_parcours(df_stat_global_suite,df_rep_emploi_suite)
+        rep_emploi_merge_suite = add_mention_parcours(df_stat_global_suite,df_rep_emploi_suite)
 
         df_stat_global_suite["promo"] = add_faculte_promo(pdf_file)[0]
 
         df_stat_global_suite["faculte"] = add_faculte_promo(pdf_file)[1]
 
-        df_rep_emploi_suite["promo"] = add_faculte_promo(pdf_file)[0]
+        rep_emploi_merge_suite["promo"] = add_faculte_promo(pdf_file)[0]
 
-        df_rep_emploi_suite["faculte"] = add_faculte_promo(pdf_file)[1]
+        rep_emploi_merge_suite["faculte"] = add_faculte_promo(pdf_file)[1]
 
         df_stat_global = pd.concat([df_stat_global, df_stat_global_suite])
 
-        df_rep_emploi = pd.concat([df_rep_emploi, df_rep_emploi_suite])
+        df_rep_emploi = pd.concat([df_rep_emploi, rep_emploi_merge_suite])
 
     
     # Fermez le fichier PDF
@@ -422,4 +422,4 @@ for blob in container_client.list_blobs():
 
 df_stat_global.to_csv('stat_global2.csv', index=False)
 
-df_rep_emploi.to_csv('rep_emploi2.csv', index=False)
+rep_emploi_merge.to_csv('rep_emploi2.csv', index=False)
