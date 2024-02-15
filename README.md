@@ -1,6 +1,6 @@
 # Objectif du projet 
 
-L'objectif de ce projet est de récupérer les informations de l'ODIF afin de les stocker dans Azure synapse puis mettre en place un dashoard power BI pour permettre aux étudiants de visualiser les données d'insertion des masters 
+L'objectif est de récupérer les statistiques d'informations ainsi que le répertoire d'emploi des anciens étudiants de master de l'université de Lille.  
 
 
 
