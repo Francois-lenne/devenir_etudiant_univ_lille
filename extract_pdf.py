@@ -56,6 +56,7 @@ if response.status_code == 200:
             re.search(regex_pdf, href)
             and href_pdf_name not in blob_list
             and href not in pdf_links # supprimer les doublons 
+            and "2016" not in href # exclure les fichiers pdf datant de 2016
         ):
             response = requests.head(href) # condition if pour vérifier que l'URL fonctionne
             if response.status_code == 200:
