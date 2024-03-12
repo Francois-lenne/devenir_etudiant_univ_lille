@@ -4,10 +4,10 @@ import PyPDF2
 import pdfplumber
 import pandas as pd
 import os
+import glob
 from azure.storage.blob import BlobServiceClient
 import os
 import requests
-
 import warnings
 
 # Ignorer tous les avertissements
@@ -423,3 +423,62 @@ for blob in container_client.list_blobs():
 df_stat_global.to_csv('stat_global2.csv', index=False)
 
 rep_emploi_merge.to_csv('rep_emploi2.csv', index=False)
+
+
+# chargement en pré prod sur snowflake
+
+
+# pour les stat global
+
+import pandas as pd
+from sqlalchemy import create_engine
+
+# Snowflake connection details
+user = os.environ["user"]
+password = os.environ["password"]
+account = os.environ["snow_account"]
+warehouse = os.environ["warehouse"]
+database = os.environ["database"]
+schema = os.environ["schema"]
+table_name_rep_emploi = 'rep_emploi_lille_master'
+table_name_stat_global = "stat_global_lille_master"
+
+
+
+
+
+def load_df_snowlfake(df,user,password,account,warehouse,database,schema,table):
+
+    connection_string = f'snowflake://{user}:{password}@{account}/{database}/{schema}?warehouse={warehouse}'
+
+    engine = create_engine(connection_string)
+
+    df.to_sql(table, engine, if_exists='replace', index=False)
+
+    return "Success"
+
+
+load_df_snowlfake(df_stat_global,user,password,account, warehouse, database,table_name_stat_global)
+
+
+
+
+
+load_df_snowlfake(rep_emploi_merge,user,password,account, warehouse, database,table_name_rep_emploi)
+
+
+
+def delete_pdf():
+    import os
+
+# Obtenez une liste de tous les fichiers .pdf dans le répertoire courant
+    pdf_files = glob.glob('*.pdf')
+
+# Parcourez la liste des fichiers .pdf et supprimez chaque fichier
+    for pdf_file in pdf_files:
+     os.remove(pdf_file)
+
+     return "pdf_file delete"
+
+
+delete_pdf()
