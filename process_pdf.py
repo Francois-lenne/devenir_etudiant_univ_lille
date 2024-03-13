@@ -78,7 +78,7 @@ def stat_global(pdf_file):
     regex_pattern_parcours = r'Parcours.+\n'
 
 
-    regex_pattern_nb_diplomes = r"concerné-e-s par l'enqu.+\n"
+    regex_pattern_nb_diplomes = r"par l'enqu.+\n"
 
 
     regex_pattern_nb_emploi = r"En emploi.+\n"
@@ -115,7 +115,7 @@ def stat_global(pdf_file):
             page_text = page.extract_text()
             
             # Vérifier si la phrase recherchée est présente sur la page
-            if phrase_a_rechercher in page_text:
+            if phrase_a_rechercher in page_text or "Nombre de diplômé-e-s de la promotion 2016" in page_text:
                 dic_stat['num_pages'].append(page_num + 1)  # Ajouter 1 car les numéros de page commencent à 1
 
                 start_index = page_text.index(phrase_a_rechercher) # récupération de l'indice
@@ -149,7 +149,7 @@ def stat_global(pdf_file):
 
                 extracted_nbdiplo = nbdiplo_match.group(0)
 
-                extracted_substring_nbdiplo = extracted_nbdiplo.replace("concerné-e-s par l'enquête : ", "").replace("\n", "").strip()
+                extracted_substring_nbdiplo = extracted_nbdiplo.replace("par l'enquête : ", "").replace("\n", "").strip()
 
                 parts = extracted_substring_nbdiplo.split(" (hors") # modifié pour éviter que le commentaires sur les étangers soit ajoutés
 
@@ -244,7 +244,7 @@ def rep_emploi(pdf_file):
             text = page.extract_text()
         
         # Vérifier si les colonnes "Diplômé-e" et "Intitulé d'emploi" sont présentes dans le texte
-            if "Diplômé-e" in text and "Intitulé d'emploi" in text:
+            if "Mission(s)" in text and "Lieu d'emploi" in text:
             # Trouver et extraire le tableau
                 table = page.extract_table()
             
@@ -261,7 +261,7 @@ def rep_emploi(pdf_file):
                     
     # suppression des "/n" dans les colonnes 
 
-    rep_emploi.columns = rep_emploi.columns.str.replace('\n', ' ')
+    rep_emploi.columns = rep_emploi.columns.astype(str).str.replace('\n', ' ')
 
     replacement_dict = {
         'Diplômé-e': {'\n': ' '},
@@ -406,8 +406,11 @@ for blob in container_client.list_blobs():
         rep_emploi_merge_suite["faculte"] = add_faculte_promo(pdf_file)[1]
 
         df_stat_global = pd.concat([df_stat_global, df_stat_global_suite])
+        print(df_stat_global)
 
         df_rep_emploi = pd.concat([df_rep_emploi, rep_emploi_merge_suite])
+
+        print(df_stat_global)
 
     
     # Fermez le fichier PDF
@@ -458,18 +461,19 @@ def load_df_snowlfake(df,user,password,account,warehouse,database,schema,table):
     return "Success"
 
 
-load_df_snowlfake(df_stat_global,user,password,account, warehouse, database,table_name_stat_global)
+# load_df_snowlfake(df_stat_global,user,password,account, warehouse, database,table_name_stat_global)
 
 
 
 
 
-load_df_snowlfake(rep_emploi_merge,user,password,account, warehouse, database,table_name_rep_emploi)
+# load_df_snowlfake(rep_emploi_merge,user,password,account, warehouse, database,table_name_rep_emploi)
 
 
 
 def delete_pdf():
     import os
+    import glob
 
 # Obtenez une liste de tous les fichiers .pdf dans le répertoire courant
     pdf_files = glob.glob('*.pdf')
