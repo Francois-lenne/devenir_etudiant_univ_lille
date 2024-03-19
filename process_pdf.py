@@ -475,14 +475,13 @@ def delete_pdf():
     import os
     import glob
 
-# Obtenez une liste de tous les fichiers .pdf dans le répertoire courant
-    pdf_files = glob.glob('*.pdf')
+    # Obtenez une liste de tous les fichiers .pdf dans le répertoire courant
+    pdf_files = glob.glob(os.path.join(os.getcwd(), '*.pdf'))
 
-# Parcourez la liste des fichiers .pdf et supprimez chaque fichier
+    # Parcourez la liste des fichiers .pdf et supprimez chaque fichier
     for pdf_file in pdf_files:
-     os.remove(pdf_file)
+        os.remove(pdf_file)
 
-     return "pdf_file delete"
-
+    return "All PDF files deleted"
 
 delete_pdf()
