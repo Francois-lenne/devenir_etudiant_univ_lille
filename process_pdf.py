@@ -413,19 +413,73 @@ for blob in container_client.list_blobs():
         print(df_stat_global)
 
     
-    # Fermez le fichier PDF
-    # pdf_file.close()
-
-    # Vous pouvez ensuite envoyer les résultats vers un autre conteneur ou les stocker ailleurs
-    # Assurez-vous de gérer les erreurs, la gestion des exceptions, etc.
-
-    # Supprimez le fichier local si vous n'en avez plus besoin
-    # os.remove(blob_name)
 
 
-df_stat_global.to_csv('stat_global2.csv', index=False)
 
-rep_emploi_merge.to_csv('rep_emploi2.csv', index=False)
+# vérification stat global 
+        
+def verification_stat_global(df):
+
+    # Supprimer les lignes contenant uniquement des valeurs nulles
+    df = df.dropna(how='all')
+
+    # Vérifier si le DataFrame contient des doublons
+
+    df = df.drop_duplicates()
+
+    # vérifier si stat global ne contient pas de valeur nul
+    if df.isnull().any().any():
+        raise ValueError("Le DataFrame contient des valeurs manquantes")
+    
+    # Liste des colonnes à vérifier
+    colonnes_a_verifier = ['num_pages', 'taux_reponses', 'concern_enquete',"nb_en_emploi","nb_en_recherche","nb_autre_situations","nb_en_etude","promo"]
+
+# Parcourir chaque colonne
+    for colonne in colonnes_a_verifier:
+    # Convertir la colonne en chaîne de caractères
+        df[colonne] = df[colonne].astype(str)
+    
+        # Vérifier si la colonne contient uniquement des chiffres
+        if not df[colonne].str.isnumeric().all():
+            print(df[colonne].dtype)
+            # Supprimer les caractères non numériques
+            df[colonne] = df[colonne].replace('\D', '', regex=True)
+            # Convertir la colonne en entier
+            df[colonne] = pd.to_numeric(df[colonne], errors='coerce').astype('Int64')
+
+        df[colonne] = pd.to_numeric(df[colonne], errors='coerce').astype('Int64')
+        
+            
+            
+    
+
+    # Vérifier que 'taux_reponses' est compris entre 0 et 100 inclus
+    if not ((df['taux_reponses'] >= 0) & (df['taux_reponses'] <= 100)).all():
+        raise ValueError("La colonne 'taux_reponses' contient des valeurs en dehors de l'intervalle [0, 100]")    
+    
+
+    if not df['promo'].astype(str).str.match('^20\d{2}$').all():
+        raise ValueError("La colonne 'promo' contient des valeurs qui ne sont pas des années commençant par '20'")
+    
+
+    # Liste des colonnes à vérifier
+    colonnes_a_verifier_str = ['mention', 'parcours', 'faculte']
+
+    # Parcourir chaque colonne
+    for colonne in colonnes_a_verifier_str:
+        # Supprimer les chiffres
+        df[colonne] = df[colonne].astype(str).str.replace('\d', '', regex=True)
+        # Convertir la colonne en string
+        df[colonne] = df[colonne].astype(str)
+        # Suprimer les espaces à droites et a gauche
+        df[colonne] = df[colonne].str.strip()
+
+    return df
+
+df_stat_global = verification_stat_global(df_stat_global)
+
+
+
 
 
 # chargement en pré prod sur snowflake
